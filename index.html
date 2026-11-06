@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Karandaaz Treasury Dashboard | Gates Foundation Grants</title>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#006890;--navy:#002942;--sky:#4a96d2;--pale:#d4edfc;--amber:#f6a505;--teal:#06969c;--plum:#9060a3;--bg:#eef3f7;--card:#fff;--tx:#2e2d2c;--tx2:#4a4f55;--mut:#7a838c;--line:#e3e8ec;--hov:#f2f9fd;--tot:#d4edfc;--sel:#fff3d6;--sw:218px;--sh:0 1px 4px #00294222}
+[data-theme=dark]{--bg:#0a1620;--card:#112638;--tx:#e9eff4;--tx2:#c4d0db;--mut:#8da0b2;--line:#25445f;--hov:#173651;--tot:#173b57;--sel:#4b3b12;--sh:0 1px 6px #0006}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Chivo,Arial,sans-serif;color:var(--tx);background:var(--bg);transition:background .4s,color .4s}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes gv{from{transform:scaleY(0)}to{transform:scaleY(1)}}@keyframes gh{from{transform:scaleX(0)}to{transform:scaleX(1)}}@keyframes dr{to{stroke-dashoffset:0}}@keyframes dnA{from{opacity:0;stroke-width:4}to{opacity:1}}@keyframes flow{0%{background-position:0 50%}100%{background-position:100% 50%}}@keyframes fl{from{transform:translate(0,0) rotate(0)}to{transform:translate(30px,-40px) rotate(12deg)}}@keyframes sh{0%{transform:translateX(-120%)}100%{transform:translateX(220%)}}
+.bgs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}.bgs i{position:absolute;width:300px;height:300px;border-radius:0 100% 0 0;background:var(--blue);opacity:.06;animation:fl 14s ease-in-out infinite alternate}.bgs i:nth-child(1){right:5%;top:30%}.bgs i:nth-child(2){left:30%;bottom:-80px;background:var(--amber);animation-duration:19s;width:220px;height:220px;border-radius:100% 0 0 0}.bgs i:nth-child(3){right:30%;bottom:8%;background:var(--teal);animation-duration:23s;width:160px;height:160px;border-radius:0 0 100% 0}
+#side{position:fixed;left:0;top:0;bottom:0;width:var(--sw);background:linear-gradient(180deg,#002942,#004866);color:#fff;z-index:50;display:flex;flex-direction:column;padding:16px 10px;transition:width .3s,transform .3s;overflow:hidden}
+.brand{font-weight:900;letter-spacing:.06em;font-size:15px;padding:4px 10px 14px;white-space:nowrap}.brand small{display:block;font-weight:300;font-size:10.5px;letter-spacing:.04em;opacity:.8}
+#side button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;white-space:nowrap;position:relative;transition:background .2s,transform .2s;color:#e8f3f9}
+#side button:hover{background:#ffffff1f;transform:translateX(3px)}#side button.on{background:#ffffff26;font-weight:700}#side button.on:before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:4px;border-radius:0 4px 4px 0;background:var(--amber)}
+#side svg{width:19px;height:19px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sl2{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.6;padding:14px 12px 4px;white-space:nowrap}.sp{flex:1}
+body.coll{--sw:62px}body.coll #side span,body.coll .brand,body.coll .sl2{display:none}
+#wrap{margin-left:var(--sw);transition:margin .3s;position:relative;z-index:1}
+#top{position:sticky;top:0;z-index:40;background:linear-gradient(110deg,#002942,#006890,#06969c,#006890,#002942);background-size:300% 100%;animation:flow 18s linear infinite alternate;color:#fff;padding:10px 18px 12px;box-shadow:0 4px 14px #00294244;border-bottom-right-radius:34px}
+.trow{display:flex;align-items:center;gap:12px;margin-bottom:8px}h1{margin:0;font-size:19px;font-weight:900;text-transform:uppercase;letter-spacing:.02em}.trow p{margin:1px 0 0;font-size:11.5px;font-weight:300;opacity:.9}#mb{display:none;font-size:20px;background:none;border:0;color:#fff;cursor:pointer}
+.ribbon{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}.ribbon::-webkit-scrollbar{height:4px}
+button.tile{all:unset;box-sizing:border-box;flex:1 0 148px;max-width:230px;background:var(--card);color:var(--tx);border-radius:4px 16px 4px 4px;padding:7px 10px;border-top:3px solid var(--blue);cursor:pointer;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+button.tile:hover{transform:translateY(-3px);box-shadow:0 8px 16px #0004}button.tile:before{content:"";position:absolute;top:0;bottom:0;width:40%;background:linear-gradient(100deg,transparent,#ffffff55,transparent);transform:translateX(-120%)}button.tile:hover:before{animation:sh .9s}
+button.tile:after{content:"\2192";position:absolute;right:8px;top:6px;color:var(--blue);font-weight:700;font-size:12px}
+.tile small{display:block;color:var(--mut);font-weight:500;text-transform:uppercase;font-size:9px;letter-spacing:.05em}.tile b{display:block;font-size:16px;font-weight:900;color:var(--blue);margin:1px 0}[data-theme=dark] .tile b{color:#7fd0f0}.tile span{display:block;font-size:10px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t2{border-color:var(--amber)!important}.t3{border-color:var(--teal)!important}.t4{border-color:var(--sky)!important}.t5{border-color:var(--plum)!important}.t6{border-color:#f16222!important}.t7{border-color:#939597!important}
+main{padding:16px 18px 30px;max-width:1240px}.view{display:none}.view.active{display:block}.view.active>*{animation:up .5s ease both}.view.active>*:nth-child(2){animation-delay:.07s}.view.active>*:nth-child(3){animation-delay:.14s}.view.active>*:nth-child(4){animation-delay:.21s}.view.active>*:nth-child(5){animation-delay:.28s}
+.card{background:var(--card);border-radius:4px 22px 4px 4px;padding:12px 14px;box-shadow:var(--sh);margin-bottom:12px;overflow:hidden;transition:transform .25s,box-shadow .25s}.card:hover{transform:translateY(-2px);box-shadow:0 8px 20px #0003}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.row21{display:grid;grid-template-columns:2fr 1fr;gap:12px}.row12{display:grid;grid-template-columns:1fr 2fr;gap:12px}
+h2{margin:0 0 1px;font-size:13.5px;font-weight:700;color:var(--blue)}[data-theme=dark] h2{color:#7fd0f0}.cap{font-size:11px;color:var(--tx2);margin:1px 0 4px}.src{font-size:10.5px;color:var(--mut);margin:4px 0 0}
+svg{width:100%;height:auto;display:block}svg text{font-family:Chivo,Arial,sans-serif;fill:var(--tx2)}svg text.ct{fill:var(--tx)}svg .gl{stroke:var(--line)}svg [data-t]{cursor:pointer;transition:opacity .15s,filter .15s}svg:hover [data-t]{opacity:.6}svg [data-t]:hover{opacity:1!important;filter:brightness(1.08)}
+svg rect.vb{transform-box:fill-box;transform-origin:50% 100%;animation:gv .8s cubic-bezier(.2,.8,.2,1) both}svg rect.hb{transform-box:fill-box;transform-origin:0 50%;animation:gh .8s cubic-bezier(.2,.8,.2,1) both}svg .ln{stroke-dasharray:1;stroke-dashoffset:1;animation:dr 1.4s ease forwards}svg .dn{animation:dnA 1s ease both}.noanim rect,.noanim .ln,.noanim .dn{animation:none!important}.noanim .ln{stroke-dasharray:none!important}
+.leg{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:10.5px;margin-top:4px;color:var(--tx2)}.leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.kpis5{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:var(--card);border-radius:4px 18px 4px 4px;padding:9px 12px;box-shadow:var(--sh);border-top:4px solid var(--blue);transition:transform .2s}.kpi:hover{transform:translateY(-2px)}.kpi small{display:block;color:var(--mut);font-weight:500;text-transform:uppercase;font-size:9.5px;letter-spacing:.05em}.kpi b{display:block;font-size:20px;font-weight:900;color:var(--blue);margin:1px 0}[data-theme=dark] .kpi b{color:#7fd0f0}.kpi span{font-size:10.5px;color:var(--tx2)}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.rk{display:flex;gap:10px;flex-wrap:wrap}.rk .kpi{min-width:170px}
+.seg{display:inline-flex;border:1px solid var(--blue);border-radius:20px;overflow:hidden}.seg button{border:0;background:var(--card);color:var(--blue);padding:7px 14px;font:500 12px Chivo,Arial;cursor:pointer;transition:.2s}.seg button.on{background:var(--blue);color:#fff}[data-theme=dark] .seg button:not(.on){color:#7fd0f0}
+select,input[type=number]{font:inherit;font-size:12px;padding:6px 9px;border:1px solid var(--mut);border-radius:6px;background:var(--card);color:var(--tx)}
+.note{background:#fff8e6;color:#4a3b00;border-left:4px solid var(--amber);padding:8px 12px;font-size:12px;margin:0 0 12px;border-radius:0 6px 6px 0}
+.ins{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:12px}.chip{background:var(--card);border-left:5px solid var(--blue);border-radius:4px 14px 4px 4px;padding:8px 12px;font-size:12px;box-shadow:var(--sh);line-height:1.45;animation:up .6s ease both}.chip b{color:var(--blue);font-size:13.5px}[data-theme=dark] .chip b{color:#7fd0f0}
+table{width:100%;border-collapse:collapse;font-size:12px}th{background:var(--navy);color:#fff;text-align:left;padding:6px 8px;font-weight:500;position:sticky;top:0}[data-theme=dark] th{background:#0a3a57}td{padding:5px 8px;border-bottom:1px solid var(--line)}.n{text-align:right;font-variant-numeric:tabular-nums}tr.tot td{font-weight:700;background:var(--tot)}tbody tr:hover td{background:var(--hov)}tr.sel td{background:var(--sel)!important;font-weight:700}#t5 tbody tr{cursor:pointer}
+.wrap{max-height:280px;overflow:auto}.wrap.tall{max-height:calc(100vh - 270px)}
+details{background:var(--card);border-radius:4px 18px 4px 4px;box-shadow:var(--sh);padding:9px 14px;margin-bottom:12px}summary{cursor:pointer;color:var(--blue);font-weight:700;font-size:13px}[data-theme=dark] summary{color:#7fd0f0}details[open] summary{margin-bottom:8px}
+.sl{display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px}.sl label{font-size:11.5px;font-weight:500;display:block}.sl small{color:var(--mut);font-size:10px;display:block}.ir{display:flex;gap:8px;align-items:center}.ir input[type=range]{flex:1}.ir input[type=number]{width:108px}input[type=range]{accent-color:var(--blue)}
+.ms{width:100%;height:26px;margin:4px 0 0}.ml{display:flex;justify-content:space-between;padding:0 3px;font-size:11px}.ml span{cursor:pointer;padding:3px 6px;border-radius:12px;text-align:center;color:var(--tx2);transition:.2s}.ml span:hover{background:var(--hov)}.ml span em{display:block;font-size:8.5px;color:var(--mut);font-style:normal}.ml span.on{background:var(--blue);color:#fff}.ml span.on em{color:#fff}
+.pre button{border:1px solid var(--blue);background:var(--card);color:var(--blue);padding:6px 11px;border-radius:16px;font:500 11.5px Chivo,Arial;cursor:pointer;margin:6px 6px 0 0;transition:.2s}.pre button:hover{background:var(--blue);color:#fff}
+.fm{font-size:12.5px;line-height:1.55}.eq{background:var(--hov);border-left:4px solid var(--blue);padding:7px 11px;border-radius:0 8px 8px 0;margin:4px 0;font-size:13.5px}.res{color:var(--blue);font-size:15.5px}[data-theme=dark] .res{color:#7fd0f0}.fl{font-weight:700;color:var(--tx);margin-top:8px;text-transform:uppercase;font-size:10px;letter-spacing:.06em}.fm small{color:var(--mut);font-size:10.5px}
+@media(max-width:980px){.row2,.row21,.row12{grid-template-columns:1fr}}
+@media(max-width:860px){#side{transform:translateX(-100%);width:218px}body.menu #side{transform:none}#wrap{margin-left:0!important}#mb{display:block}body.coll #side span,body.coll .brand,body.coll .sl2{display:inline}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}svg .ln{stroke-dasharray:none!important;stroke-dashoffset:0!important}}
+@media print{#side,#top .ribbon,.bar,.bgs{display:none}#wrap{margin:0}.view{display:block!important}}
+#tip{position:fixed;pointer-events:none;background:#002942;color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;max-width:260px;opacity:0;z-index:99;transition:opacity .1s;box-shadow:0 4px 12px #0006}#o2 svg,#dn1 svg,#rg svg,#pdn svg{max-width:190px;margin:0 auto}.ml span{padding:3px 3px;font-size:10px}.ml{padding:0}.card{min-width:0}#gate{position:fixed;inset:0;z-index:999;background:linear-gradient(135deg,#002942,#006890,#06969c);background-size:200% 200%;animation:flow 14s ease infinite alternate;display:flex;align-items:center;justify-content:center;padding:20px}
+.gcard{background:#fff;color:#2e2d2c;border-radius:6px 28px 6px 6px;padding:26px 28px;width:min(380px,100%);box-shadow:0 14px 40px #0006;animation:up .6s ease both}
+.gcard h1{color:#006890;font-size:22px;margin:0}.gcard p{margin:4px 0 14px;color:#4a4f55;font-size:13px}.gcard input{width:100%;padding:10px 12px;border:1px solid #939597;border-radius:8px;font:inherit;margin-bottom:10px}
+.gcard button{width:100%;padding:10px;border:0;border-radius:8px;background:#006890;color:#fff;font:700 14px Chivo,Arial;cursor:pointer}.gcard button:hover{background:#004866}#gmsg{color:#c0392b;font-size:12px;margin:10px 0 0;min-height:16px}
+</style></head><body>
+<div class="bgs"><i></i><i></i><i></i></div>
+<aside id="side"><div class="brand">KARANDAAZ<small>Treasury dashboard</small></div>
+<button data-go="overview" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Overview</span></button>
+<button data-go="receipts"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>Receipts</span></button>
+<button data-go="funds"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/></svg><span>Available funds</span></button>
+<button data-go="profit"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg><span>Profit 2026-27</span></button>
+<button data-go="projection"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="17" r="2" fill="currentColor"/></svg><span>Projections</span></button>
+<button data-go="register"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>Register</span></button>
+<div class="sl2">Donor view</div>
+<button data-v="GF"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg><span>Gates Foundation</span></button>
+<button data-v="FCDO"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg><span>FCDO</span></button>
+<button data-v="ALL"><svg viewBox="0 0 24 24"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg><span>Combined (Rs)</span></button>
+<div class="sp"></div>
+<button id="dk"><svg viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg><span>Dark mode</span></button>
+<button id="sc"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg><span>Collapse menu</span></button></aside>
+<div id="wrap"><header id="top"><div class="trow"><button id="mb" aria-label="Menu">&#9776;</button><div><h1>Gates Foundation Grants</h1><p>Main focus: GF receipts, 2026-27 funds and profit | FCDO shown separately | Data as of {{ASOF}} | Click a tile to jump</p></div></div><div class="ribbon" id="tiles"></div></header>
+<main>
+<section class="view active" id="overview"><div class="ins" id="ins"></div>
+<div class="row2"><div class="card"><h2>GF Receipts by Fiscal Year</h2><p class="cap">US$ (M = million). {{GAPNOTE}}</p><div id="o1"></div></div>
+<div class="card"><h2>Share of GF Receipts by Programme</h2><div id="o2"></div><div class="leg" id="lo2"></div></div></div>
+<div class="row2"><div class="card"><h2>Available USD Funds by Programme</h2><p class="cap">USD accounts, {{ASOF}}.</p><div id="o3"></div></div>
+<div class="card noanim"><h2>Cumulative Profit 2026-27</h2><p class="cap">Actual to September, then your projection settings.</p><div id="o4"></div></div></div>
+<p class="src">Source: Karandaaz Donorwise Grant Receipt Report and 26-27 GF Balance workbook ({{ASOF}}). Data refreshes automatically when the workbook is updated.</p></section>
+
+<section class="view" id="receipts"><div class="bar"><div class="seg" id="vw"><button data-v="GF" class="on">Gates Foundation</button><button data-v="FCDO">FCDO</button><button data-v="ALL">Combined (Rs)</button></div><div class="seg" id="cu"><button data-c="N" class="on">US$</button><button data-c="R">Rupees</button></div><div class="rk" id="rk"></div></div><p class="note" id="vn" style="display:none"></p>
+<div class="row21"><div class="card"><h2 id="h1"></h2><p class="cap" id="c1"></p><div id="f1"></div><div class="leg" id="l1"></div></div>
+<div class="card"><h2>Figure 2: Share of Receipts</h2><div id="dn1"></div><div class="leg" id="ldn"></div></div></div>
+<div class="row2"><div class="card"><h2 id="h2"></h2><p class="cap" id="c2"></p><div id="f2"></div></div>
+<div class="card"><h2>Figure 4: Cumulative Receipts</h2><p class="cap" id="c3"></p><div id="f3"></div></div></div>
+<details><summary id="th1">Table 1</summary><div class="wrap" id="t1"></div></details>
+<p class="src">Source: Karandaaz Donorwise Grant Receipt Report, receipts to {{LASTGF}}. Fiscal year runs July to June.</p></section>
+
+<section class="view" id="funds"><div class="row21"><div class="kgrid" id="fk"></div><div class="card"><h2>USD Funds Remaining</h2><div id="rg"></div><p class="cap">Available USD as a share of 1 July opening plus new receipts. The rest was converted to PKR for payments, or moved by other adjustments.</p></div></div>
+<div class="row2"><div class="card"><h2>Figure 5: Available USD Funds by Programme</h2><p class="cap">USD account balance, {{ASOF}} (M = million).</p><div id="f5"></div></div>
+<div class="card"><h2>Figure 6: Opening, USD Converted to PKR and Available</h2><p class="cap">US$ (M = million), from 1 July 2026. Conversion is for payments, which vary; it is not an expense.</p><div id="f6"></div><div class="leg"><span><i style="background:#939597"></i>Opening 1 July</span><span><i style="background:#f16222"></i>USD converted to PKR</span><span><i style="background:#006890"></i>Available USD now</span></div></div></div>
+<details><summary>Table 2: Funds Position by Programme</summary><div class="wrap" id="t2"></div><p class="src">USD converted to PKR covers payments, bank charges and transfers to PKR accounts for utilisation. Balances exclude PKR converted to US$. PCDFI Mckinsey-tagged balance (below US$1) is under Financial Inclusion.</p></details>
+<p class="src">Source: 26-27 GF Balance workbook. PKR balances as of 30 September 2026.</p></section>
+
+<section class="view" id="profit"><div class="bar"><select id="pm"><option value="3">July to September 2026 (year to date)</option><option value="0">July 2026</option><option value="1">August 2026</option><option value="2">September 2026</option></select></div>
+<div class="row21"><div class="kgrid" id="pk"></div><div class="card"><h2>Figure 9: Share of Profit by Programme</h2><div id="pdn"></div><div class="leg" id="lpd"></div></div></div>
+<div class="row2"><div class="card"><h2>Figure 7: Monthly Profit by Programme</h2><p class="cap">US$ equivalent (K = thousand). September includes profit on matured short term investments.</p><div id="f7"></div><div class="leg" id="l7"></div></div>
+<div class="card"><h2>Figure 8: Profit by Programme, USD and PKR Accounts</h2><p class="cap">US$ equivalent for the selected period.</p><div id="f8"></div><div class="leg"><span><i style="background:#006890"></i>USD accounts</span><span><i style="background:#06969c"></i>PKR accounts (US$ equivalent)</span></div></div></div>
+<details><summary>Table 3: Profit by Programme, USD and PKR Shown Separately</summary><div class="wrap" id="t3"></div><p class="src">Rupee equivalent of USD profit uses each month's SBP spot rate. Raast Regional Connectivity is recorded as Buna Raast in the workbook.</p></details>
+<p class="src">Source: GF Profit USD PKR Split 26-27 sheet.</p></section>
+
+<section class="view" id="projection"><div class="row12"><div class="card"><h2>1. Slide to a month</h2><input type="range" id="ms" class="ms" min="0" max="11" step="1" value="3"><div class="ml" id="ml"></div>
+<div id="ctl"><h2 style="margin-top:8px" id="ct"></h2><div class="sl"><div><label>Annual profit rate (%)</label><div class="ir"><input type="range" id="s1" min="0" max="12" step="0.1"><input type="number" id="q1" step="0.1"></div></div>
+<div><label>USD converted to PKR in the month (US$)</label><div class="ir"><input type="range" id="s2" min="0" max="3000000" step="25000"><input type="number" id="q2" step="25000"></div></div>
+<div><label>Equity injection in the month (US$)</label><div class="ir"><input type="range" id="s3" min="0" max="5000000" step="100000"><input type="number" id="q3" step="100000"></div></div></div>
+<div class="pre"><button id="ap">Apply rate and conversion to later months</button><button id="rs">Reset to defaults</button></div></div></div>
+<div class="card"><h2>2. How this month is calculated</h2><div id="fp"></div></div></div>
+<div class="kpis5" id="jk"></div>
+<div class="row2"><div class="card noanim"><h2>Figure 10: Cumulative Profit, 2026-27</h2><p class="cap">Profit added up from July, US$ (K = thousand). Amber dot is your selected month.</p><div id="f9"></div></div>
+<div class="card noanim"><h2>Figure 11: Monthly Profit, Actual and Projected</h2><p class="cap">Dark bars actual; light bars projected; amber is the selected month.</p><div id="f10"></div></div></div>
+<details open><summary>Table 4: Month-by-Month Calculation (US$; K = thousand, M = million)</summary><p class="cap">Click a row to select that month.</p><div class="wrap" id="t5"></div><p class="src" id="ex"></p></details></section>
+
+<section class="view" id="register"><div class="bar"><select id="fy"></select><select id="pg"></select><span class="cap">Follows the donor view chosen in Receipts.</span></div><div class="card"><div class="wrap tall" id="t4"></div></div></section>
+</main></div>
+<div id="tip"></div><div id="gate"><div class="gcard"><h1>KARANDAAZ</h1><p>Treasury dashboard. Enter the access password.</p>
+<form id="gform"><input type="password" id="gpw" placeholder="Password" autocomplete="current-password" autofocus><button type="submit">Open dashboard</button></form><p id="gmsg"></p></div></div>
+<script>
+(function(){
+  const $=i=>document.getElementById(i),msg=$('gmsg'),b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  async function getData(){const r=await fetch('data.json?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('data.json not found ('+r.status+'). Open the dashboard through its web link, not as a file.');return r.json()}
+  async function decrypt(o,pw){const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+    const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(o.salt),iterations:o.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+    return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(o.iv)},key,b64(o.ct))))}
+  function start(D){
+    const F=D.F,fy=d=>{const t=new Date(d),y=t.getMonth()>=6?t.getFullYear():t.getFullYear()-1;return y},ys=D.GF.map(r=>fy(r[0])),seen=new Set(ys),gaps=[];
+    for(let y=Math.min(...ys);y<=Math.max(...ys);y++)if(!seen.has(y))gaps.push(y+'-'+String(y+1).slice(2));
+    const rep={'{{ASOF}}':F.asOf,'{{LASTGF}}':F.lastGF,'{{GAPNOTE}}':gaps.length?'No receipts in '+gaps.join(', ')+'.':''};
+    const w=$('wrap');let h=w.innerHTML;for(const k in rep)h=h.split(k).join(rep[k]);w.innerHTML=h;
+    window.__DATA__=D;$('gate').remove();const s=document.createElement('script');s.src='app.js?v='+F.built;document.body.appendChild(s)}
+  async function boot(pw){
+    msg.textContent='';let o;try{o=await getData()}catch(e){msg.textContent=e.message;return}
+    if(!o.enc){start(o);return}
+    if(!pw){return}
+    try{const D=await decrypt(o,pw);try{sessionStorage.setItem('krnpw',pw)}catch(e){}start(D)}
+    catch(e){try{sessionStorage.removeItem('krnpw')}catch(_){}msg.textContent='Incorrect password. Please try again.'}}
+  $('gform').onsubmit=e=>{e.preventDefault();msg.textContent='Opening...';boot($('gpw').value)};
+  let saved='';try{saved=sessionStorage.getItem('krnpw')||''}catch(e){}
+  boot(saved);
+})();
+</script></body></html>
