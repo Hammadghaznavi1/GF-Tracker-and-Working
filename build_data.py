@@ -15,6 +15,7 @@ import os
 import re
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 import openpyxl
@@ -57,16 +58,38 @@ def sheet(wb, name):
     sys.exit(f"ERROR: sheet '{name}' not found. Sheets in the file: {[w.title for w in wb.worksheets]}")
 
 
+def decrypt_file(path, password):
+    """Decrypt GF_Balance.enc (made by encrypt.html) and return the Excel bytes."""
+    from cryptography.exceptions import InvalidTag
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    o = json.loads(Path(path).read_text())
+    key = hashlib.pbkdf2_hmac("sha256", password.encode(), base64.b64decode(o["salt"]), int(o["iter"]), 32)
+    try:
+        return AESGCM(key).decrypt(base64.b64decode(o["iv"]), base64.b64decode(o["ct"]), None)
+    except InvalidTag:
+        sys.exit("ERROR: could not decrypt data/GF_Balance.enc. The password typed in encrypt.html must be exactly "
+                 "the same as the GitHub secret DASHBOARD_PASSWORD.")
+
+
 def find_workbook(arg):
     if arg:
         return arg
+    if Path("data/GF_Balance.enc").exists():
+        pw = os.environ.get("DASHBOARD_PASSWORD", "")
+        if not pw:
+            sys.exit("ERROR: data/GF_Balance.enc needs the DASHBOARD_PASSWORD secret to be read.")
+        tmp = Path(tempfile.mkdtemp()) / "GF_Balance.xlsx"
+        tmp.write_bytes(decrypt_file("data/GF_Balance.enc", pw))
+        print("Decrypted data/GF_Balance.enc")
+        return str(tmp)
     if Path("data/GF_Balance.xlsx").exists():
         return "data/GF_Balance.xlsx"
     files = glob.glob("data/*.xlsx")
     if len(files) == 1:
         return files[0]
-    sys.exit("ERROR: put exactly one Excel file in the data/ folder (ideally named GF_Balance.xlsx). "
-             f"Found: {files}")
+    if len(files) > 1:
+        sys.exit(f"ERROR: the data folder has {len(files)} Excel files {files}. Keep exactly one Excel file there.")
+    sys.exit("ERROR: no Excel file found. Upload your workbook (.xlsx) into the data folder.")
 
 
 def build(path):
@@ -191,6 +214,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--xlsx")
     ap.add_argument("--site", default="site")
+    ap.add_argument("--data-only", action="store_true",
+                    help="only write the data file (no website files); used for a ready-made site")
+    ap.add_argument("--out", default="data.json", help="output file when --data-only is used")
     a = ap.parse_args()
     path = find_workbook(a.xlsx)
     print(f"Reading {path}")
@@ -204,9 +230,14 @@ def main():
         print("WARNING: data is NOT encrypted (ALLOW_PLAIN=1).")
     else:
         sys.exit("ERROR: DASHBOARD_PASSWORD is not set. Add it as a GitHub secret so the published data is encrypted.")
+    if a.data_only:
+        Path(a.out).write_text(json.dumps(out, separators=(",", ":")))
+        print(f"Wrote {a.out}: {len(data['GF'])} GF receipts, {len(data['FC'])} FCDO receipts, "
+              f"as of {data['F']['asOf']}")
+        return
     site = Path(a.site)
     site.mkdir(exist_ok=True)
-    for f in ("index.html", "app.js"):
+    for f in ("index.html", "app.js", "encrypt.html"):
         shutil.copy(Path("web") / f, site / f)
     (site / ".nojekyll").write_text("")
     (site / "data.json").write_text(json.dumps(out, separators=(",", ":")))
