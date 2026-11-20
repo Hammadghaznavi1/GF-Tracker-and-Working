@@ -75,7 +75,7 @@ details{background:var(--card);border-radius:4px 18px 4px 4px;box-shadow:var(--s
 <div class="row2"><div class="card"><h2>GF Receipts by Fiscal Year</h2><p class="cap">US$ (M = million). {{GAPNOTE}}</p><div id="o1"></div></div>
 <div class="card"><h2>Share of GF Receipts by Programme</h2><div id="o2"></div><div class="leg" id="lo2"></div></div></div>
 <div class="row2"><div class="card"><h2>Available USD Funds by Programme</h2><p class="cap">USD accounts, {{ASOF}}.</p><div id="o3"></div></div>
-<div class="card noanim"><h2>Cumulative Profit 2026-27</h2><p class="cap">Actual to September, then your projection settings.</p><div id="o4"></div></div></div>
+<div class="card noanim"><h2>Cumulative Profit 2026-27</h2><p class="cap">Actual to {{ACTTO}}, then your projection settings.</p><div id="o4"></div></div></div>
 <p class="src">Source: Karandaaz Donorwise Grant Receipt Report and 26-27 GF Balance workbook ({{ASOF}}). Data refreshes automatically when the workbook is updated.</p></section>
 
 <section class="view" id="receipts"><div class="bar"><div class="seg" id="vw"><button data-v="GF" class="on">Gates Foundation</button><button data-v="FCDO">FCDO</button><button data-v="ALL">Combined (Rs)</button></div><div class="seg" id="cu"><button data-c="N" class="on">US$</button><button data-c="R">Rupees</button></div><div class="rk" id="rk"></div></div><p class="note" id="vn" style="display:none"></p>
@@ -90,9 +90,9 @@ details{background:var(--card);border-radius:4px 18px 4px 4px;box-shadow:var(--s
 <div class="row2"><div class="card"><h2>Figure 5: Available USD Funds by Programme</h2><p class="cap">USD account balance, {{ASOF}} (M = million).</p><div id="f5"></div></div>
 <div class="card"><h2>Figure 6: Opening, USD Converted to PKR and Available</h2><p class="cap">US$ (M = million), from 1 July 2026. Conversion is for payments, which vary; it is not an expense.</p><div id="f6"></div><div class="leg"><span><i style="background:#939597"></i>Opening 1 July</span><span><i style="background:#f16222"></i>USD converted to PKR</span><span><i style="background:#006890"></i>Available USD now</span></div></div></div>
 <details><summary>Table 2: Funds Position by Programme</summary><div class="wrap" id="t2"></div><p class="src">USD converted to PKR covers payments, bank charges and transfers to PKR accounts for utilisation. Balances exclude PKR converted to US$. PCDFI Mckinsey-tagged balance (below US$1) is under Financial Inclusion.</p></details>
-<p class="src">Source: 26-27 GF Balance workbook. PKR balances as of 30 September 2026.</p></section>
+<p class="src">Source: 26-27 GF Balance workbook. PKR balances as of {{PKRASOF}}.</p></section>
 
-<section class="view" id="profit"><div class="bar"><select id="pm"><option value="3">July to September 2026 (year to date)</option><option value="0">July 2026</option><option value="1">August 2026</option><option value="2">September 2026</option></select></div>
+<section class="view" id="profit"><div class="bar"><select id="pm"></select></div>
 <div class="row21"><div class="kgrid" id="pk"></div><div class="card"><h2>Figure 9: Share of Profit by Programme</h2><div id="pdn"></div><div class="leg" id="lpd"></div></div></div>
 <div class="row2"><div class="card"><h2>Figure 7: Monthly Profit by Programme</h2><p class="cap">US$ equivalent (K = thousand). September includes profit on matured short term investments.</p><div id="f7"></div><div class="leg" id="l7"></div></div>
 <div class="card"><h2>Figure 8: Profit by Programme, USD and PKR Accounts</h2><p class="cap">US$ equivalent for the selected period.</p><div id="f8"></div><div class="leg"><span><i style="background:#006890"></i>USD accounts</span><span><i style="background:#06969c"></i>PKR accounts (US$ equivalent)</span></div></div></div>
@@ -124,7 +124,7 @@ details{background:var(--card);border-radius:4px 18px 4px 4px;box-shadow:var(--s
   function start(D){
     const F=D.F,fy=d=>{const t=new Date(d),y=t.getMonth()>=6?t.getFullYear():t.getFullYear()-1;return y},ys=D.GF.map(r=>fy(r[0])),seen=new Set(ys),gaps=[];
     for(let y=Math.min(...ys);y<=Math.max(...ys);y++)if(!seen.has(y))gaps.push(y+'-'+String(y+1).slice(2));
-    const rep={'{{ASOF}}':F.asOf,'{{LASTGF}}':F.lastGF,'{{GAPNOTE}}':gaps.length?'No receipts in '+gaps.join(', ')+'.':''};
+    const rep={'{{ASOF}}':F.asOf,'{{LASTGF}}':F.lastGF,'{{ACTTO}}':['July','August','September','October','November','December','January','February','March','April','May','June'][(F.nAct||3)-1],'{{PKRASOF}}':F.pkrAsOf||F.asOf,'{{GAPNOTE}}':gaps.length?'No receipts in '+gaps.join(', ')+'.':''};
     const w=$('wrap');let h=w.innerHTML;for(const k in rep)h=h.split(k).join(rep[k]);w.innerHTML=h;
     window.__DATA__=D;$('gate').remove();const s=document.createElement('script');s.src='app.js?v='+F.built;document.body.appendChild(s)}
   async function boot(pw){
