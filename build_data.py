@@ -29,12 +29,25 @@ PROG_MAP = {"financial inclusion program": 0, "ehsaas program": 1, "cash transfe
 DETAIL_COLS = {"E": 0, "F": 0, "G": 1, "H": 2, "I": 3, "J": 4, "K": 5, "L": 6}   # F = Mckinsey-tagged
 PROFIT_COLS = {0: [("C", "D"), ("E", "F")], 1: [("G", "H")], 2: [("I", "J")], 3: [("K", "L")],
                4: [("M", "N")], 5: [("O", "P")], 6: [("Q", "R")]}
-DAYS = [31, 31, 30]          # July, August, September (profit on actual/360)
+DAYS12 = [31, 31, 30, 31, 30, 31, 31, 28, 31, 30, 31, 30]   # Jul to Jun (profit on actual/360)
 ITER = 250_000               # PBKDF2 iterations
 
 
 def num(v):
-    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0.0
+    if isinstance(v, bool):
+        return 0.0
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, str):
+        try:
+            return float(v.replace(",", "").replace("$", "").replace("£", "").strip())
+        except ValueError:
+            return 0.0
+    return 0.0
+
+
+DATE_FORMATS = ("%d-%m-%y", "%d-%m-%Y", "%Y-%m-%d", "%d-%b-%y", "%d-%b-%Y", "%d %B %Y", "%d %b %Y",
+                "%d/%m/%Y", "%d/%m/%y", "%d.%m.%Y", "%B %d %Y", "%b %d %Y")
 
 
 def parse_date(v):
@@ -42,13 +55,48 @@ def parse_date(v):
         return v.date()
     if isinstance(v, dt.date):
         return v
+    if isinstance(v, (int, float)) and not isinstance(v, bool) and 30000 < v < 80000:   # Excel serial number
+        return (dt.datetime(1899, 12, 30) + dt.timedelta(days=float(v))).date()
     if isinstance(v, str):
-        for f in ("%d-%m-%y", "%d-%m-%Y", "%Y-%m-%d"):
+        t = re.sub(r"(\d+)(st|nd|rd|th)\b", r"\1", v.strip().replace(",", ""))
+        for f in DATE_FORMATS:
             try:
-                return dt.datetime.strptime(v.strip(), f).date()
+                return dt.datetime.strptime(t, f).date()
             except ValueError:
                 pass
     return None
+
+
+def label_date(lab):
+    """Read the date from labels such as 'October 31st, 2026' or '31st October 2026'."""
+    m = re.search(r"([A-Za-z]+)\s+(\d+)(?:st|nd|rd|th)?,?\s+(\d{4})", lab or "")
+    m2 = re.search(r"(\d+)(?:st|nd|rd|th)?\s+([A-Za-z]+),?\s+(\d{4})", lab or "")
+    for mon, day, yr in ([(m.group(1), m.group(2), m.group(3))] if m else []) + ([(m2.group(2), m2.group(1), m2.group(3))] if m2 else []):
+        try:
+            return dt.datetime.strptime(f"{day} {mon} {yr}", "%d %B %Y").date()
+        except ValueError:
+            pass
+    return None
+
+
+def programme_index(name):
+    """Match programme names loosely (spelling, 'Program'/'Programme', stray hyphens)."""
+    n = re.sub(r"[^a-z0-9 ]", " ", str(name or "").lower())
+    n = " ".join(n.split())
+    for key, i in (("financial inclusion", 0), ("ehsaas", 1), ("cash transfer", 2), ("g2p", 3),
+                   ("cico", 4), ("cash in cash out", 4), ("raast", 5), ("fbr", 6)):
+        if key in n:
+            return i
+    return None
+
+
+def donor_of(v):
+    n = str(v or "").strip().lower()
+    if n in ("gf", "bmgf", "gates", "gates foundation", "bill & melinda gates foundation"):
+        return "GF"
+    if n.startswith("fcdo") or n == "eagr":
+        return "FCDO"
+    return ""
 
 
 def sheet(wb, name):
@@ -95,18 +143,30 @@ def find_workbook(arg):
 def build(path):
     wb = openpyxl.load_workbook(path, data_only=True)
     # ---- receipts ----
-    GF, FC = [], []
-    for r in sheet(wb, "EAGR & GF").iter_rows(values_only=True):
+    GF, FC, skipped = [], [], []
+    for n, r in enumerate(sheet(wb, "EAGR & GF").iter_rows(values_only=True), 1):
         if len(r) < 11:
             continue
-        donor, d = str(r[2] or "").strip(), parse_date(r[3])
-        if not d:
+        donor, d = donor_of(r[2]), parse_date(r[3])
+        has_amount = num(r[6]) or num(r[7])
+        if not donor:
+            if str(r[2] or "").strip() and has_amount and str(r[2]).strip().lower() not in ("donor",):
+                skipped.append(f"row {n}: donor '{r[2]}' is not recognised (use GF or FCDO)")
             continue
-        if donor == "GF" and num(r[6]):
-            i = PROG_MAP.get(str(r[4]).strip().lower())
-            if i is not None:
-                GF.append([d.isoformat(), i, num(r[6]), round(num(r[8]), 4), round(num(r[9]), 2)])
-        elif donor == "FCDO":
+        if not d:
+            if has_amount or str(r[3] or "").strip():
+                skipped.append(f"row {n} ({donor}): date '{r[3]}' could not be read (use a real date such as 30-10-26)")
+            continue
+        if donor == "GF":
+            if not num(r[6]):
+                skipped.append(f"row {n} (GF {d}): the US$ amount in column G is empty or not a number")
+                continue
+            i = programme_index(r[4])
+            if i is None:
+                skipped.append(f"row {n} (GF {d}): programme '{r[4]}' is not recognised")
+                continue
+            GF.append([d.isoformat(), i, num(r[6]), round(num(r[8]), 4), round(num(r[9]), 2)])
+        else:
             FC.append([d.isoformat(), str(r[4]).strip(), str(r[5] or "").strip(), round(num(r[7]), 2),
                        round(num(r[8]), 4), round(num(r[10]), 2)])
     GF.sort()
@@ -114,7 +174,7 @@ def build(path):
     if not GF:
         sys.exit("ERROR: no GF receipts found in sheet 'EAGR & GF'.")
 
-    # ---- monthly balance blocks ----
+    # ---- monthly balance blocks (26-27 Detailed) ----
     ws = sheet(wb, "26-27 Detailed")
 
     def row7(r):
@@ -127,10 +187,11 @@ def build(path):
     for r in range(1, ws.max_row + 1):
         lab = str(ws.cell(r, 3).value or "").strip()
         if lab.startswith("Opening bank balances in PKR"):
-            cur = {"conv": [0.0] * 7, "eq": [0.0] * 7}
+            cur = {"conv": [0.0] * 7, "eq": [0.0] * 7, "flow": 0.0}
             blocks.append(cur)
         if cur is None or not lab:
             continue
+        low = lab.lower()
         if lab.startswith("Opening bank balances in PKR"):
             cur["pkr_open"] = row7(r)
         elif lab.startswith("Opening bank balances in USD"):
@@ -139,8 +200,14 @@ def build(path):
             cur["tdr_open"] = row7(r)
         elif lab.startswith("Add: Equity Injection"):
             cur["eq"] = row7(r)
+            cur["flow"] += sum(abs(x) for x in cur["eq"])
         elif lab.startswith("Less: Outflow from USD bank account"):
-            cur["conv"] = [a - b for a, b in zip(cur["conv"], row7(r))]
+            v = row7(r)
+            cur["conv"] = [a - b for a, b in zip(cur["conv"], v)]
+            cur["flow"] += sum(abs(x) for x in v)
+        elif low.startswith("less: outflow from bank to tdr") or low.startswith("add: inflow to bank account due to tdrs") \
+                or low.startswith("add: profit earned"):
+            cur["flow"] += sum(abs(x) for x in row7(r))
         elif lab.startswith("Closing bank balances in PKR"):
             cur["pkr_close"] = row7(r)
         elif lab.startswith("Closing bank balances in USD"):
@@ -148,56 +215,91 @@ def build(path):
             cur["as_of"] = lab.split(" as of ")[-1]
         elif lab.startswith("Closing short term investment TDR"):
             cur["tdr_close"] = row7(r)
-    blocks = blocks[:4]
-    if len(blocks) < 4:
-        sys.exit(f"ERROR: expected 4 monthly blocks (Jul, Aug, Sep, Oct) in '26-27 Detailed', found {len(blocks)}.")
+    blocks = blocks[:12]
+    if not blocks:
+        sys.exit("ERROR: no monthly blocks ('Opening bank balances in PKR Account...') found in '26-27 Detailed'.")
     for b in blocks:
         for k in ("pkr_open", "usd_open", "tdr_open", "pkr_close", "usd_close", "tdr_close"):
             b.setdefault(k, [0.0] * 7)
+        b["date"] = label_date(b.get("as_of", ""))
+    first = blocks[0]["date"]
+    if not first:
+        sys.exit("ERROR: could not read the closing date of the first month in '26-27 Detailed'.")
+    y0 = first.year
+
+    def is_month_end(k, b):
+        m = (6 + k) % 12 + 1                       # July = block 0
+        y = y0 + (6 + k) // 12
+        last = (dt.date(y + (m == 12), m % 12 + 1, 1) - dt.timedelta(days=1))
+        return b["date"] == last
+
+    nAct = 0                                        # completed months (activity recorded and closed at month end)
+    for k, b in enumerate(blocks):
+        if b["flow"] > 0 and is_month_end(k, b):
+            nAct += 1
+        else:
+            break
+    if nAct < 1:
+        sys.exit("ERROR: no completed month found in '26-27 Detailed'.")
+    inprog = blocks[nAct] if nAct < len(blocks) and blocks[nAct]["flow"] > 0 else None
+    latest = inprog or blocks[nAct - 1]
     S = lambda b, k: sum(b[k])
 
     # ---- profit split ----
     ps = sheet(wb, "GF Profit - USD PKR Split 26-27")
-    rate = [num(ps[f"U{r}"].value) for r in (5, 6, 7)]
-    pu = [[sum(num(ps[f"{a}{r}"].value) for a, _ in PROFIT_COLS[i]) for r in (5, 6, 7)] for i in range(7)]
-    pk = [[sum(num(ps[f"{b}{r}"].value) for _, b in PROFIT_COLS[i]) for r in (5, 6, 7)] for i in range(7)]
-    profit = sum(map(sum, pu)) + sum(sum(pk[i][m] / rate[m] for i in range(7)) for m in range(3))
+    rows_ = [5 + m for m in range(nAct)]
+    rate = [num(ps[f"U{r}"].value) for r in rows_]
+    pu = [[sum(num(ps[f"{a}{r}"].value) for a, _ in PROFIT_COLS[i]) for r in rows_] for i in range(7)]
+    pk = [[sum(num(ps[f"{b}{r}"].value) for _, b in PROFIT_COLS[i]) for r in rows_] for i in range(7)]
+    if not all(rate):
+        sys.exit(f"ERROR: the SBP spot rate (column U) is missing for one of the first {nAct} months in the profit sheet.")
+    profit = sum(map(sum, pu)) + sum(sum(pk[i][m] / rate[m] for i in range(7)) for m in range(nAct))
 
-    openA = [S(blocks[m], "usd_open") + S(blocks[m], "tdr_open") for m in range(3)]
-    closeA = [S(blocks[m], "usd_close") + S(blocks[m], "tdr_close") for m in range(3)]
-    avgbal = sum(openA[m] * DAYS[m] for m in range(3)) / 92
-    monthly = [list(b["conv"]) for b in blocks]
+    openA = [S(blocks[m], "usd_open") + S(blocks[m], "tdr_open") for m in range(nAct)]
+    closeA = [S(blocks[m], "usd_close") + S(blocks[m], "tdr_close") for m in range(nAct)]
+    days = DAYS12[:nAct]
+    actDays = sum(days)
+    avgbal = sum(openA[m] * days[m] for m in range(nAct)) / actDays
+    used = blocks[:nAct + (1 if inprog else 0)]
+    monthly = [list(b["conv"]) for b in used]
+    pkr_b = latest if sum(abs(x) for x in latest["pkr_close"]) > 0 else blocks[nAct - 1]
 
     # ---- dates for captions ----
-    as_of, lab = None, blocks[3].get("as_of", "")
-    m = re.search(r"([A-Za-z]+)\s+(\d+)(?:st|nd|rd|th)?,?\s+(\d{4})", lab)     # "October 5th, 2026"
-    m2 = re.search(r"(\d+)(?:st|nd|rd|th)?\s+([A-Za-z]+),?\s+(\d{4})", lab)    # "5th October 2026"
-    for mon, day, yr in ([(m.group(1), m.group(2), m.group(3))] if m else []) + ([(m2.group(2), m2.group(1), m2.group(3))] if m2 else []):
-        try:
-            as_of = dt.datetime.strptime(f"{day} {mon} {yr}", "%d %B %Y").date()
-            break
-        except ValueError:
-            pass
     last_gf = dt.date.fromisoformat(GF[-1][0])
     long = lambda d: f"{d.day} {d.strftime('%B %Y')}"
     short = lambda d: f"{d.day} {d.strftime('%b %Y')}"
-    as_of = as_of or last_gf
-    oct_dates = [dt.date.fromisoformat(g[0]) for g in GF
-                 if dt.date.fromisoformat(g[0]).year == as_of.year and dt.date.fromisoformat(g[0]).month == as_of.month]
+    as_of = latest["date"] or last_gf
+    cur_dates = []
+    if inprog:
+        cur_dates = [dt.date.fromisoformat(g[0]) for g in GF
+                     if (dt.date.fromisoformat(g[0]).year, dt.date.fromisoformat(g[0]).month) == (as_of.year, as_of.month)
+                     and dt.date.fromisoformat(g[0]) <= as_of]
+    cur_eq = S(inprog, "eq") if inprog else 0.0
+    cur_date = long(cur_dates[-1]) if cur_dates else ""
     F = {
         "PG": PG, "CODE": CODE,
+        "nAct": nAct, "actDays": actDays, "q1days": actDays,
         "open": [blocks[0]["usd_open"][i] + blocks[0]["tdr_open"][i] for i in range(7)],
-        "avail": list(blocks[3]["usd_close"]), "tdr": list(blocks[3]["tdr_close"]),
-        "pkr": list(blocks[2]["pkr_close"]),
-        "spend": [sum(b["conv"][i] for b in blocks) for i in range(7)],
+        "avail": list(latest["usd_close"]), "tdr": list(latest["tdr_close"]),
+        "pkr": list(pkr_b["pkr_close"]), "pkrAsOf": long(pkr_b["date"]) if pkr_b["date"] else long(as_of),
+        "spend": [sum(b["conv"][i] for b in used) for i in range(7)],
         "monthly": monthly, "pu": pu, "pk": pk, "rate": rate,
-        "yld": profit / avgbal * 360 / 92, "latest": GF[-1][3], "avgbal": avgbal, "q1days": 92,
-        "openA": openA, "closeA": closeA, "convA": [sum(monthly[m]) for m in range(3)],
-        "eqA": [S(blocks[m], "eq") for m in range(3)],
-        "octEq": S(blocks[3], "eq"), "octDate": long(oct_dates[-1]) if oct_dates else "",
+        "yld": profit / avgbal * 360 / actDays, "latest": GF[-1][3], "avgbal": avgbal,
+        "openA": openA, "closeA": closeA, "convA": [sum(m) for m in monthly[:nAct]],
+        "eqA": [S(blocks[m], "eq") for m in range(nAct)],
+        "curEq": cur_eq, "curDate": cur_date, "octEq": cur_eq, "octDate": cur_date,
         "asOf": long(as_of), "asOfShort": short(as_of), "lastGF": long(last_gf),
         "built": dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d%H%M%S"),
     }
+    if skipped:
+        print("WARNING: these rows in sheet 'EAGR & GF' were NOT included in the dashboard:")
+        for x in skipped:
+            print("   -", x)
+    else:
+        print("All receipt rows were read.")
+    print("Latest GF receipts read:")
+    for g in GF[-3:]:
+        print(f"   {g[0]}  {PG[g[1]]}  US${g[2]:,.0f}")
     return {"GF": GF, "FC": FC, "F": F}
 
 
